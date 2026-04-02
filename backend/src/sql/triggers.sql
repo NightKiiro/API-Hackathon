@@ -1,0 +1,13 @@
+DROP TRIGGER IF EXISTS close_game_when_jackpot_zero;
+CREATE TRIGGER close_game_when_jackpot_zero
+AFTER UPDATE OF current_jackpot ON games
+FOR EACH ROW
+WHEN NEW.current_jackpot = 0 AND NEW.status != 'closed'
+BEGIN
+    UPDATE games
+    SET status = 'closed'
+    WHERE id = NEW.id;
+
+    INSERT INTO alerts (game_id, message)
+    VALUES (NEW.id, 'Game closed: jackpot reached 0');
+END;
