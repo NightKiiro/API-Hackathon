@@ -1,6 +1,6 @@
-# 🖥️ EPITE Casino Backend
+# 🖥️ EPI BET Casino Backend
 
-Backend Node.js/Express pour le dashboard EPITE Casino, fournissant les données en temps réel pour le frontend.
+Backend Node.js/Express pour le dashboard EPI BET Casino, fournissant les données en temps réel pour le frontend.
 
 ---
 
@@ -65,7 +65,7 @@ Backend Node.js/Express pour le dashboard EPITE Casino, fournissant les données
 npm install
 
 # Initialiser la base de données
-node src/initDb.js
+node src/initDb.jsepi_bet
 
 # Lancer le serveur
 node src/index.js
@@ -76,10 +76,10 @@ node src/index.js
 
 ```bash
 # Construire l'image Docker
-docker build -t epite-casino-backend .
+docker build -t epi_bet-casino-backend .
 
 # Lancer le conteneur
-docker run -p 8000:8000 epite-casino-backend
+docker run -p 8000:8000 epi_bet-casino-backend
 
 # → Accéder au serveur sur http://localhost:8000
 ```
@@ -133,7 +133,7 @@ Le backend gère les données nécessaires au dashboard :
 
 ## 🎯 Objectif
 
-Fournir un serveur fiable et sécurisé pour le dashboard EPITE Casino, capable de :
+Fournir un serveur fiable et sécurisé pour le dashboard epi_bet Casino, capable de :
 
 * Servir les données en temps réel pour le leaderboard et les dashboards créateurs
 * Gérer les transactions et alertes

@@ -1,4 +1,4 @@
-# 🎰 EPITE Casino Dashboard
+# 🎰 EPI BET Casino Dashboard
 
 Hackathon dashboard pour visualiser les performances des jeux en temps réel et suivre l’activité des créateurs.
 
@@ -77,10 +77,10 @@ npm run dev
 
 ```bash
 # Construire l'image Docker
-docker build -t epite-casino-dashboard .
+docker build -t epi_bet-casino-dashboard .
 
 # Lancer le conteneur
-docker run -p 3000:3000 epite-casino-dashboard
+docker run -p 3000:3000 epi_bet-casino-dashboard
 
 # → Accéder à http://localhost:3000
 ```
@@ -91,7 +91,7 @@ docker run -p 3000:3000 epite-casino-dashboard
 
 ## 🎯 Concept
 
-EPITE Casino Dashboard permet de visualiser **en temps réel** les performances des jeux et les activités des créateurs.
+EPI BET Casino Dashboard permet de visualiser **en temps réel** les performances des jeux et les activités des créateurs.
 
 ### 🏆 Leaderboard
 

@@ -22,7 +22,7 @@ export default function Navbar({ lastUpdated }) {
   return (
     <nav className={styles.nav}>
       <div className={styles.logo}>
-        EPITE <span className={styles.logoAccent}>CASINO</span>
+        EPI BET <span className={styles.logoAccent}>CASINO</span>
         <span className={styles.live}>
           <span className={styles.liveDot} />
           LIVE
