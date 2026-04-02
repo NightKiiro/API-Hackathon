@@ -1,13 +1,7 @@
-const crypto = require("crypto");
+const { hashApiKey } = require("../services/apiKeyService");
+const db = require("../db");
 
-// ⚠️ temporaire (plus tard DB backend SQL)
-const apiKeys = [];
-
-function hashApiKey(key) {
-  return crypto.createHash("sha256").update(key).digest("hex");
-}
-
-function apiKeyMiddleware(req, res, next) {
+async function apiKeyMiddleware(req, res, next) {
   const key = req.headers["x-api-key"];
 
   if (!key) {
@@ -16,14 +10,26 @@ function apiKeyMiddleware(req, res, next) {
 
   const hashed = hashApiKey(key);
 
-  const valid = apiKeys.find(k => k.keyHash === hashed);
+  try {
+    db.get(
+      "SELECT * FROM api_keys WHERE key_hash = ? AND revoked = 0",
+      [hashed],
+      (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: "Erreur serveur" });
+        }
 
-  if (!valid) {
-    return res.status(403).json({ error: "API key invalide" });
+        if (!row) {
+          return res.status(403).json({ error: "API key invalide" });
+        }
+
+        req.user = row.user_id;
+        next();
+      }
+    );
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur serveur" });
   }
-
-  req.user = valid.userId;
-  next();
 }
 
 module.exports = apiKeyMiddleware;
