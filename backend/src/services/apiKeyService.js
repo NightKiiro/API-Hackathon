@@ -1,48 +1,65 @@
 const crypto = require("crypto");
-const db = require("../db");
+const { run, get } = require("../db");
 
-function generateApiKey() {
-  return crypto.randomBytes(32).toString("hex");
+function generateRawApiKey() {
+  return `epibet_${crypto.randomBytes(24).toString("hex")}`;
 }
 
-function hashApiKey(key) {
-  return crypto.createHash("sha256").update(key).digest("hex");
+function hashApiKey(rawKey) {
+  return crypto.createHash("sha256").update(rawKey).digest("hex");
 }
 
-function createApiKey(userId) {
-  return new Promise((resolve, reject) => {
-    const apiKey = generateApiKey();
-    const keyHash = hashApiKey(apiKey);
+async function createApiKeyForCreator(creatorId) {
+  const rawKey = generateRawApiKey();
+  const keyHash = hashApiKey(rawKey);
 
-    db.run(
-      "INSERT INTO api_keys (key_hash, user_id) VALUES (?, ?)",
-      [keyHash, userId],
-      function (err) {
-        if (err) return reject(err);
-        resolve(apiKey); // retournée une seule fois
-      }
-    );
-  });
+  await run(
+    `
+    INSERT INTO api_keys (creator_id, key_hash, revoked)
+    VALUES (?, ?, 0)
+    `,
+    [creatorId, keyHash]
+  );
+
+  return rawKey;
 }
 
-function revokeApiKey(key) {
-  return new Promise((resolve, reject) => {
-    const keyHash = hashApiKey(key);
+async function revokeApiKey(rawKey) {
+  const keyHash = hashApiKey(rawKey);
 
-    db.run(
-      "UPDATE api_keys SET revoked = 1 WHERE key_hash = ?",
-      [keyHash],
-      function (err) {
-        if (err) return reject(err);
-        resolve(true);
-      }
-    );
-  });
+  const result = await run(
+    `
+    UPDATE api_keys
+    SET revoked = 1
+    WHERE key_hash = ?
+    `,
+    [keyHash]
+  );
+
+  return result.changes > 0;
+}
+
+async function findCreatorByApiKey(rawKey) {
+  const keyHash = hashApiKey(rawKey);
+
+  return get(
+    `
+    SELECT
+      ak.id AS api_key_id,
+      ak.creator_id,
+      c.email
+    FROM api_keys ak
+    INNER JOIN creators c ON c.id = ak.creator_id
+    WHERE ak.key_hash = ? AND ak.revoked = 0
+    `,
+    [keyHash]
+  );
 }
 
 module.exports = {
-  generateApiKey,
+  generateRawApiKey,
   hashApiKey,
-  createApiKey,
-  revokeApiKey
+  createApiKeyForCreator,
+  revokeApiKey,
+  findCreatorByApiKey,
 };

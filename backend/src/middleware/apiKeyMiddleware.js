@@ -1,34 +1,32 @@
-const { hashApiKey } = require("../services/apiKeyService");
-const db = require("../db");
+const { findCreatorByApiKey } = require("../services/apiKeyService");
 
 async function apiKeyMiddleware(req, res, next) {
-  const key = req.headers["x-api-key"];
-
-  if (!key) {
-    return res.status(401).json({ error: "API key manquante" });
-  }
-
-  const hashed = hashApiKey(key);
-
   try {
-    db.get(
-      "SELECT * FROM api_keys WHERE key_hash = ? AND revoked = 0",
-      [hashed],
-      (err, row) => {
-        if (err) {
-          return res.status(500).json({ error: "Erreur serveur" });
-        }
+    const apiKey = req.header("X-API-Key");
 
-        if (!row) {
-          return res.status(403).json({ error: "API key invalide" });
-        }
+    if (!apiKey) {
+      return res.status(401).json({
+        error: "Missing API key",
+      });
+    }
 
-        req.user = row.user_id;
-        next();
-      }
-    );
-  } catch (err) {
-    return res.status(500).json({ error: "Erreur serveur" });
+    const creator = await findCreatorByApiKey(apiKey);
+
+    if (!creator) {
+      return res.status(401).json({
+        error: "Invalid or revoked API key",
+      });
+    }
+
+    req.user = {
+      id: creator.creator_id,
+      email: creator.email,
+      apiKeyId: creator.api_key_id,
+    };
+
+    next();
+  } catch (error) {
+    next(error);
   }
 }
 

@@ -1,37 +1,34 @@
-const db = require("../db");
 const { isEmailAllowed } = require("../config/whitelist");
 
-function createUser(email) {
-  return new Promise((resolve, reject) => {
-    if (!isEmailAllowed(email)) {
-      return reject(new Error("Email non autorisé"));
-    }
-
-    db.run(
-      "INSERT INTO creators (email) VALUES (?)",
-      [email],
-      function (err) {
-        if (err) return reject(err);
-        resolve({ id: this.lastID, email });
-      }
-    );
-  });
+function validateEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase());
 }
 
-function getUserByEmail(email) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT * FROM creators WHERE email = ?",
-      [email],
-      (err, row) => {
-        if (err) return reject(err);
-        resolve(row);
-      }
-    );
-  });
+function normalizeEmail(email) {
+  return email.trim().toLowerCase();
+}
+
+function canRegisterEmail(email) {
+  if (!validateEmail(email)) {
+    return {
+      ok: false,
+      error: "Invalid email format",
+    };
+  }
+
+  if (!isEmailAllowed(email)) {
+    return {
+      ok: false,
+      error: "Email is not allowed",
+    };
+  }
+
+  return { ok: true };
 }
 
 module.exports = {
-  createUser,
-  getUserByEmail
+  validateEmail,
+  normalizeEmail,
+  canRegisterEmail,
 };

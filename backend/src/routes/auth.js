@@ -1,121 +1,133 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('../db');
-const { generateApiKey, hashApiKey } = require('../services/apiKeyService');
-const { isEmailAllowed } = require('../services/authService');
 
-/**
- * Stockage temporaire des clés API (en mémoire)
- */
-const apiKeys = [];
+const { get, run, all } = require("../db");
+const apiKeyMiddleware = require("../middleware/apiKeyMiddleware");
+const { canRegisterEmail, normalizeEmail } = require("../services/authService");
+const {
+  createApiKeyForCreator,
+  revokeApiKey,
+} = require("../services/apiKeyService");
 
-/**
- * POST /api/auth/register
- * Inscription d'un nouveau créateur
- */
-router.post('/register', async (req, res) => {
-  const { email } = req.body;
+router.post("/register", async (req, res, next) => {
+  try {
+    const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email requis' });
-  }
-
-  // Vérifier si l'email est dans la whitelist
-  if (!isEmailAllowed(email)) {
-    return res.status(403).json({ error: 'Email non autorisé' });
-  }
-
-  // Vérifier si le créateur existe déjà dans la DB
-  db.get('SELECT * FROM creators WHERE email = ?', [email], async (err, existingCreator) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Erreur serveur' });
+    const emailCheck = canRegisterEmail(email);
+    if (!emailCheck.ok) {
+      return res.status(400).json({
+        error: emailCheck.error,
+      });
     }
 
-    // Générer une clé API
-    const apiKey = generateApiKey();
-    const hashedKey = hashApiKey(apiKey);
+    const normalizedEmail = normalizeEmail(email);
 
-    // Stocker la clé en mémoire (temporaire)
-    const userId = email; // On utilise l'email comme identifiant
-    apiKeys.push({ keyHash: hashedKey, userId });
+    const existingCreator = await get(
+      `SELECT id, email FROM creators WHERE email = ?`,
+      [normalizedEmail]
+    );
 
-    if (!existingCreator) {
-      // Créer le créateur dans la base de données
-      db.run(
-        'INSERT INTO creators (email, api_key) VALUES (?, ?)',
-        [email, hashedKey],
-        function (err) {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Erreur lors de la création du créateur' });
-          }
-
-          res.status(201).json({
-            message: 'Créateur inscrit avec succès',
-            api_key: apiKey,  // La clé en clair à conserver
-            email
-          });
-        }
-      );
-    } else {
-      // Mettre à jour la clé API du créateur existant
-      db.run(
-        'UPDATE creators SET api_key = ? WHERE email = ?',
-        [hashedKey, email],
-        function (err) {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Erreur lors de la mise à jour' });
-          }
-
-          res.json({
-            message: 'Nouvelle clé API générée',
-            api_key: apiKey,
-            email
-          });
-        }
-      );
+    if (existingCreator) {
+      return res.status(409).json({
+        error: "Creator already exists",
+      });
     }
-  });
+
+    const creatorInsert = await run(
+      `
+      INSERT INTO creators (email)
+      VALUES (?)
+      `,
+      [normalizedEmail]
+    );
+
+    const apiKey = await createApiKeyForCreator(creatorInsert.id);
+
+    res.status(201).json({
+      message: "Creator registered successfully",
+      creator: {
+        id: creatorInsert.id,
+        email: normalizedEmail,
+      },
+      apiKey,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-/**
- * GET /api/auth/me
- * Vérifie la validité de la clé API et retourne les infos du créateur
- * 
- * Headers : x-api-key
- */
-router.get('/me', (req, res) => {
-  const apiKey = req.headers['x-api-key'];
+router.post("/api-keys", apiKeyMiddleware, async (req, res, next) => {
+  try {
+    const apiKey = await createApiKeyForCreator(req.user.id);
 
-  if (!apiKey) {
-    return res.status(401).json({ error: 'Clé API requise' });
+    res.status(201).json({
+      message: "API key created successfully",
+      apiKey,
+    });
+  } catch (error) {
+    next(error);
   }
+});
 
-  const hashedKey = hashApiKey(apiKey);
-  const validKey = apiKeys.find(k => k.keyHash === hashedKey);
+router.get("/api-keys", apiKeyMiddleware, async (req, res, next) => {
+  try {
+    const keys = await all(
+      `
+      SELECT id, revoked, created_at
+      FROM api_keys
+      WHERE creator_id = ?
+      ORDER BY id DESC
+      `,
+      [req.user.id]
+    );
 
-  if (!validKey) {
-    return res.status(403).json({ error: 'Clé API invalide' });
+    res.json(keys);
+  } catch (error) {
+    next(error);
   }
+});
 
-  // Récupérer les infos du créateur
-  db.get('SELECT id, email, created_at FROM creators WHERE email = ?', [validKey.userId], (err, creator) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Erreur serveur' });
+router.delete("/api-keys/revoke", apiKeyMiddleware, async (req, res, next) => {
+  try {
+    const { apiKey } = req.body;
+
+    if (!apiKey) {
+      return res.status(400).json({
+        error: "apiKey is required",
+      });
     }
-    if (!creator) {
-      return res.status(404).json({ error: 'Créateur non trouvé' });
+
+    const revoked = await revokeApiKey(apiKey);
+
+    if (!revoked) {
+      return res.status(404).json({
+        error: "API key not found",
+      });
     }
 
     res.json({
-      id: creator.id,
-      email: creator.email,
-      created_at: creator.created_at
+      message: "API key revoked successfully",
     });
-  });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/me", apiKeyMiddleware, async (req, res, next) => {
+  try {
+    const creator = await get(
+      `
+      SELECT id, email, created_at
+      FROM creators
+      WHERE id = ?
+      `,
+      [req.user.id]
+    );
+
+    res.json({ creator });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

@@ -1,17 +1,28 @@
-const whitelist = process.env.EPITECH_WHITELIST
-  ? process.env.EPITECH_WHITELIST.split(",")
-  : [];
+require("dotenv").config();
 
-const allowedDomains = ["epitech.eu"];
+function getExplicitWhitelist() {
+  const raw = process.env.WHITELIST_EMAILS || "";
+  return raw
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isEpitechEmail(email) {
+  return typeof email === "string" && email.toLowerCase().endsWith("@epitech.eu");
+}
 
 function isEmailAllowed(email) {
-  return (
-    whitelist.includes(email) ||
-    allowedDomains.some(domain => email.endsWith(`@${domain}`))
-  );
+  if (!email || typeof email !== "string") return false;
+
+  const normalized = email.trim().toLowerCase();
+  const whitelist = getExplicitWhitelist();
+
+  return isEpitechEmail(normalized) || whitelist.includes(normalized);
 }
 
 module.exports = {
-  whitelist,
-  isEmailAllowed
+  isEmailAllowed,
+  isEpitechEmail,
+  getExplicitWhitelist,
 };

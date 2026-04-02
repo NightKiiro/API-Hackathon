@@ -1,47 +1,24 @@
 const fs = require("fs");
 const path = require("path");
-const db = require("./db");
+const { exec } = require("./db");
 
-function readSqlFile(filename) {
-  return fs.readFileSync(path.join(__dirname, "sql", filename), "utf8");
-}
+async function initDb() {
+  try {
+    const sqlDir = path.join(__dirname, "sql");
+    const files = ["schema.sql", "views.sql", "triggers.sql"];
 
-function initDb(callback) {
-  const schema = readSqlFile("schema.sql");
-  const views = readSqlFile("views.sql");
-  const triggers = readSqlFile("triggers.sql");
-
-  db.exec(schema, (schemaErr) => {
-    if (schemaErr) {
-      console.error("Schema initialization error:", schemaErr.message);
-      if (callback) callback(schemaErr);
-      return;
+    for (const file of files) {
+      const content = fs.readFileSync(path.join(sqlDir, file), "utf8");
+      await exec(content);
+      console.log(`Loaded ${file}`);
     }
 
-    db.exec(views, (viewsErr) => {
-      if (viewsErr) {
-        console.error("Views initialization error:", viewsErr.message);
-        if (callback) callback(viewsErr);
-        return;
-      }
-
-      db.exec(triggers, (triggersErr) => {
-        if (triggersErr) {
-          console.error("Triggers initialization error:", triggersErr.message);
-          if (callback) callback(triggersErr);
-          return;
-        }
-
-        console.log("Database schema, views and triggers initialized");
-
-        if (callback) callback(null);
-      });
-    });
-  });
+    console.log("Database initialized successfully.");
+    process.exit(0);
+  } catch (error) {
+    console.error("Database initialization failed:", error.message);
+    process.exit(1);
+  }
 }
 
-if (require.main === module) {
-  initDb(() => db.close());
-}
-
-module.exports = initDb;
+initDb();
