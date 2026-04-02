@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.1.1:8000'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://10.79.215.134:8000'
 
 export function getApiKey() {
   return localStorage.getItem('epibet_api_key') || ''

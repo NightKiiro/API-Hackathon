@@ -67,4 +67,23 @@ router.get("/stats", async (req, res, next) => {
   }
 });
 
+router.get("/alerts", async (req, res, next) => {
+  try {
+    console.log("GET /public/alerts hit");
+    const alerts = await all(
+      `
+      SELECT *
+      FROM alerts
+      ORDER BY created_at DESC, id DESC
+      `
+    );
+
+    console.log("ALERTS:", alerts);
+    res.json(alerts);
+  } catch (error) {
+    console.error("ALERTS ERROR:", error);
+    next(error);
+  }
+});
+
 module.exports = router;
