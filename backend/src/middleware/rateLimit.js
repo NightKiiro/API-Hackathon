@@ -2,7 +2,7 @@ const rateLimit = require("express-rate-limit");
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 200, // 200 requêtes par IP sur la fenêtre
+  max: 5000, // 200 requêtes par IP sur la fenêtre
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -22,7 +22,7 @@ const authLimiter = rateLimit({
 
 const transactionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 min
-  max: 60,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
