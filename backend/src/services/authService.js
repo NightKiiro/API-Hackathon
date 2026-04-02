@@ -10,14 +10,22 @@ function normalizeEmail(email) {
 }
 
 function canRegisterEmail(email) {
-  if (!validateEmail(email)) {
+  console.log("RAW EMAIL:", email);
+
+  const isValid = validateEmail(email);
+  console.log("VALID EMAIL:", isValid);
+
+  const allowed = isEmailAllowed(email);
+  console.log("ALLOWED EMAIL:", allowed);
+
+  if (!isValid) {
     return {
       ok: false,
       error: "Invalid email format",
     };
   }
 
-  if (!isEmailAllowed(email)) {
+  if (!allowed) {
     return {
       ok: false,
       error: "Email is not allowed",
