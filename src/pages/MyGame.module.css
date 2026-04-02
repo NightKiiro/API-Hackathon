@@ -1,0 +1,142 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+.loading {
+  text-align: center;
+  padding: 80px 32px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- Header ---- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.25s ease both;
+}
+
+.gameIcon {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.gameName {
+  font-family: var(--font-display);
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.gameMeta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.gameSelect {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.gameSelect:hover, .gameSelect:focus {
+  border-color: var(--gold);
+}
+
+/* ---- Jackpot bar ---- */
+.jackpotBar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.3s ease both;
+}
+
+.jackpotBarLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.jackpotBarLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.jackpotBarValue {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.jackpotTrack {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.jackpotFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease, background 0.4s ease;
+}
+
+.jackpotPct {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ---- Metrics ---- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+/* ---- Charts ---- */
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .page { padding: 20px 16px; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .chartsRow { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .metrics { grid-template-columns: 1fr; }
+  .header { flex-wrap: wrap; }
+  .gameSelect { width: 100%; }
+}
