@@ -1,4 +1,5 @@
 const express = require("express");
+const { body, validationResult } = require("express-validator");
 const router = express.Router();
 
 const { get, run, all } = require("../db");
@@ -9,52 +10,79 @@ const {
   revokeApiKey,
 } = require("../services/apiKeyService");
 
-router.post("/register", async (req, res, next) => {
-  try {
-    const { email } = req.body;
+router.post(
+  "/register",
+  [
+    body("email")
+      .trim()
+      .isEmail()
+      .withMessage("Email invalide")
+      .normalizeEmail(),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
 
-    const emailCheck = canRegisterEmail(email);
-    if (!emailCheck.ok) {
-      return res.status(400).json({
-        error: emailCheck.error,
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          message: "Erreur de validation",
+          errors: errors.array(),
+        });
+      }
+
+      const { email } = req.body;
+
+      const emailCheck = canRegisterEmail(email);
+      if (!emailCheck.ok) {
+        return res.status(400).json({
+          error: emailCheck.error,
+        });
+      }
+
+      const normalizedEmail = normalizeEmail(email);
+
+      const existingCreator = await get(
+        `SELECT id, email FROM creators WHERE email = ?`,
+        [normalizedEmail]
+      );
+
+      if (existingCreator) {
+        const apiKey = await createApiKeyForCreator(existingCreator.id);
+
+        return res.status(200).json({
+          message: "Nouvelle clé API générée",
+          creator: {
+            id: existingCreator.id,
+            email: existingCreator.email,
+          },
+          apiKey,
+        });
+      }
+
+      const creatorInsert = await run(
+        `
+        INSERT INTO creators (email)
+        VALUES (?)
+        `,
+        [normalizedEmail]
+      );
+
+      const apiKey = await createApiKeyForCreator(creatorInsert.id);
+
+      return res.status(201).json({
+        message: "Créateur inscrit avec succès",
+        creator: {
+          id: creatorInsert.id,
+          email: normalizedEmail,
+        },
+        apiKey,
       });
+    } catch (error) {
+      console.error("REGISTER ERROR:", error);
+      next(error);
     }
-
-    const normalizedEmail = normalizeEmail(email);
-
-    const existingCreator = await get(
-      `SELECT id, email FROM creators WHERE email = ?`,
-      [normalizedEmail]
-    );
-
-    if (existingCreator) {
-      return res.status(409).json({
-        error: "Creator already exists",
-      });
-    }
-
-    const creatorInsert = await run(
-      `
-      INSERT INTO creators (email)
-      VALUES (?)
-      `,
-      [normalizedEmail]
-    );
-
-    const apiKey = await createApiKeyForCreator(creatorInsert.id);
-
-    res.status(201).json({
-      message: "Creator registered successfully",
-      creator: {
-        id: creatorInsert.id,
-        email: normalizedEmail,
-      },
-      apiKey,
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.post("/api-keys", apiKeyMiddleware, async (req, res, next) => {
   try {

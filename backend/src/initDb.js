@@ -3,22 +3,18 @@ const path = require("path");
 const { exec } = require("./db");
 
 async function initDb() {
-  try {
-    const sqlDir = path.join(__dirname, "sql");
-    const files = ["schema.sql", "views.sql", "triggers.sql"];
+  const schema = fs.readFileSync(path.join(__dirname, "sql", "schema.sql"), "utf8");
+  const views = fs.readFileSync(path.join(__dirname, "sql", "views.sql"), "utf8");
+  const triggers = fs.readFileSync(path.join(__dirname, "sql", "triggers.sql"), "utf8");
 
-    for (const file of files) {
-      const content = fs.readFileSync(path.join(sqlDir, file), "utf8");
-      await exec(content);
-      console.log(`Loaded ${file}`);
-    }
+  await exec(schema);
+  await exec(views);
+  await exec(triggers);
 
-    console.log("Database initialized successfully.");
-    process.exit(0);
-  } catch (error) {
-    console.error("Database initialization failed:", error.message);
-    process.exit(1);
-  }
+  console.log("Database initialized successfully");
 }
 
-initDb();
+initDb().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
