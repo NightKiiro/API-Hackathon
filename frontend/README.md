@@ -11,98 +11,89 @@ Hackathon dashboard — classement des jeux + vue créateur.
 
 ## Structure
 
-```
-src/
-├── components/       # Briques UI réutilisables
-│   ├── Navbar        # Barre de navigation
-│   ├── MetricCard    # Carte de métrique (chiffre + label)
-│   ├── GameTable     # Tableau classement des jeux (triable)
-│   ├── PlayerList    # Classement joueurs
-│   ├── TransactionFeed # Feed transactions en live
-│   ├── JackpotAlert  # Bannière d'alerte jackpot
-│   ├── ProfitChart   # Graphique ligne — profit dans le temps
-│   └── WinRateChart  # Graphique donut — distribution gains/pertes
-│
+src/  
+├── components/  
+│ ├── Navbar  
+│ ├── MetricCard  
+│ ├── GameTable  
+│ ├── TransactionFeed  
+│ ├── JackpotAlert  
+│ ├── ProfitChart  
+│ └── WinRateChart  
+│  
 ├── hooks/
-│   └── usePolling.js  # Hook de polling — refresh auto toutes les Xs
-│
+│ └── usePolling.js  
+│  
 ├── pages/
-│   ├── Leaderboard.jsx  # /leaderboard — vue publique
-│   └── MyGame.jsx       # /my-game — vue créateur
-│
+│ ├── Leaderboard.jsx  
+│ └── MyGame.jsx  
+│  
 ├── utils/
-│   ├── api.js      # Toutes les fonctions fetch() centralisées
-│   └── format.js   # Helpers de formatage (coins, nombres, temps)
-│
-├── App.jsx          # Router principal
-├── main.jsx         # Point d'entrée React
-└── index.css        # Variables CSS globales + reset
-```
+│ ├── api.js  
+│ └── format.js  
+│  
+├── App.jsx  
+├── main.jsx  
+└── index.css  
 
 ## Installation & Lancement
 
 ```bash
-# 1. Installer les dépendances
 npm install
-
-# 2. Configurer l'API
-cp .env.example .env
-# Éditer .env et mettre l'URL de votre API
-
-# 3. Lancer en développement
 npm run dev
 # → http://localhost:5173
-
-# 4. Build pour production
-npm run build
-npm run preview
 ```
 
-## Brancher votre vraie API
+## Concept
 
-Dans `src/pages/Leaderboard.jsx` et `src/pages/MyGame.jsx`,
-changez simplement `USE_MOCK = true` en `USE_MOCK = false`.
+Ce frontend permet de visualiser en temps réel les performances des jeux.
 
-Votre API doit retourner ces formats :
+Deux interfaces principales :
 
-### GET /api/games
-```json
-[
-  {
-    "id": 1,
-    "name": "StarForge",
-    "emoji": "🚀",
-    "type": "Tirage",
-    "team": "NeonByte",
-    "plays": 312,
-    "wagered": 624,
-    "profit": 87,
-    "jackpot": 87,
-    "jackpotMax": 200,
-    "status": "open"
-  }
-]
-```
+### 🏆 Leaderboard
 
-### GET /api/games/:id
-```json
-{
-  "...": "même champs que ci-dessus",
-  "profitHistory": [2, 5, 8, 12, 18, 24, 31, 41, 51, 62, 74, 87],
-  "winRate": [55, 30, 15]
-}
-```
+* classement des jeux
+* métriques globales
+* flux de transactions
+* alertes visuelles (ex: jackpot vide)
 
-### GET /api/players/leaderboard
-```json
-[
-  { "id": 1, "name": "Alex B.", "initials": "AB", "color": "#7b5cff", "coins": 38, "plays": 24, "wins": 18 }
-]
-```
+### 🎯 Dashboard créateur
 
-### GET /api/transactions?limit=10
-```json
-[
-  { "id": 1, "emoji": "🚀", "game": "StarForge", "player": "Alex B.", "bet": 2, "result": "win", "gain": 4, "timestamp": "2025-04-03T10:00:00Z" }
-]
-```
+* sélection d’un jeu
+* affichage des statistiques
+* suivi des transactions
+* état du jackpot
+
+## Fonctionnement
+
+Le front est basé sur un système de **polling** (rafraîchissement automatique) :
+
+Leaderboard → toutes les ~5 secondes
+Dashboard → toutes les ~3–5 secondes
+
+Les données sont récupérées via ```api.js``` et mises à jour dynamiquement dans les composants.
+
+## UI / UX
+* interface simple et lisible
+* composants réutilisables
+* mise en avant des métriques importantes
+* couleurs pour différencier :
+  * gains
+  * pertes
+  * états (actif / fermé)
+
+## Composants clés
+* **GameTable** → classement triable des jeux
+* **TransactionFeed** → flux des transactions récentes
+* **MetricCard** → affichage des indicateurs principaux
+* **JackpotAlert** → alerte visuelle critique
+* **Charts (Recharts)** → visualisation des performances
+
+## Important
+* aucune logique métier côté front
+* aucune donnée sensible stockée
+* le front sert uniquement de visualisation
+
+## Objectif
+
+Fournir une interface claire, rapide et efficace pour visualiser les performances des jeux en temps réel dans un contexte hackathon.
