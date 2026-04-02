@@ -1,0 +1,49 @@
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  transition: border-color var(--transition);
+  animation: fadeInUp 0.3s ease both;
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+}
+
+.accent {
+  border-top: 2px solid var(--accent-color, var(--gold));
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.sub {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.subUp {
+  composes: sub;
+  color: var(--green);
+}
+
+.subDown {
+  composes: sub;
+  color: var(--red);
+}

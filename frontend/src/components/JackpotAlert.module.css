@@ -1,0 +1,38 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.25s ease both;
+}
+
+.danger {
+  background: rgba(255, 79, 79, 0.08);
+  border-color: rgba(255, 79, 79, 0.35);
+}
+
+.warning {
+  background: rgba(245, 200, 66, 0.07);
+  border-color: rgba(245, 200, 66, 0.3);
+}
+
+.icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.alertTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.danger .alertTitle { color: var(--red); }
+.warning .alertTitle { color: var(--gold); }
+
+.alertSub {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
