@@ -24,6 +24,8 @@ app.use(cors());
 app.use(express.json());
 app.use(globalLimiter);
 
+app.set('trust proxy', 1)
+
 /* ---------- API ---------- */
 
 app.get("/api/health", (req, res) => {
