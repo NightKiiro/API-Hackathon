@@ -1,46 +1,53 @@
-/**
- * components/TransactionFeed.jsx — Live Transaction Feed
- *
- * Shows the most recent bets across all games.
- * The `timeAgo` helper recalculates on each render, so timestamps
- * stay fresh without needing a separate timer.
- */
 import React from 'react'
 import { formatCoins, timeAgo } from '../utils/format'
 import styles from './TransactionFeed.module.css'
 
-export default function TransactionFeed({ transactions = [], title = '⚡ Transactions récentes' }) {
+export default function TransactionFeed({
+  transactions = [],
+  title = '⚡ Transactions récentes',
+}) {
   return (
     <div className={styles.panel}>
       <div className={styles.panelTitle}>{title}</div>
+
       <div className={styles.list}>
         {transactions.length === 0 && (
-          <div className={styles.empty}>Aucune transaction pour l'instant…</div>
+          <div className={styles.empty}>Aucune transaction pour l’instant…</div>
         )}
+
         {transactions.map((tx) => {
-          const isWin = tx.result === 'win'
+          const isIncome = tx.type === 'income'
+          const amountColor = isIncome ? 'var(--green)' : 'var(--red)'
+
           return (
             <div key={tx.id} className={styles.row}>
               <div
                 className={styles.icon}
-                style={{ background: isWin ? 'rgba(0,229,160,0.1)' : 'rgba(255,79,79,0.08)' }}
+                style={{
+                  background: isIncome
+                    ? 'rgba(0,229,160,0.12)'
+                    : 'rgba(255,79,79,0.12)',
+                }}
               >
-                {tx.emoji}
+                {isIncome ? '⬇️' : '⬆️'}
               </div>
+
               <div className={styles.info}>
                 <div className={styles.txTitle}>
-                  <span className={styles.player}>{tx.player}</span>
-                  <span className={styles.game}> · {tx.game}</span>
+                  {isIncome ? 'Entrée de pièces' : 'Sortie de pièces'}
                 </div>
+
                 <div className={styles.meta}>
-                  Mise {formatCoins(tx.bet)} · {timeAgo(tx.timestamp)}
+                  {tx.type} · jackpot {formatCoins(tx.jackpot_before)} → {formatCoins(tx.jackpot_after)}
+                </div>
+
+                <div className={styles.meta}>
+                  {timeAgo(tx.created_at || tx.timestamp)}
                 </div>
               </div>
-              <div
-                className={styles.amount}
-                style={{ color: isWin ? 'var(--green)' : 'var(--red)' }}
-              >
-                {isWin ? '+' : ''}{formatCoins(tx.gain)}
+
+              <div className={styles.amount} style={{ color: amountColor }}>
+                {isIncome ? '+' : '-'}{formatCoins(tx.amount)}
               </div>
             </div>
           )

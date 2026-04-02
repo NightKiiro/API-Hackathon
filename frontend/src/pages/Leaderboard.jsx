@@ -1,109 +1,128 @@
-/**
- * pages/Leaderboard.jsx — Public Leaderboard Page
- *
- * "Pages" are components tied to a URL route.
- * This one lives at /leaderboard.
- *
- * It uses our usePolling hook to:
- *   - Fetch games, players, and transactions from the API
- *   - Re-fetch every 5 seconds automatically
- *   - Show loading skeletons while data loads
- *
- * Data flow:
- *   API → usePolling → state → props → child components
- */
-import React, { useCallback } from 'react'
-import { fetchGames, fetchPlayers, fetchTransactions, MOCK_GAMES, MOCK_PLAYERS, MOCK_TRANSACTIONS } from '../utils/api'
+import React from 'react'
+import {
+  fetchPublicRanking,
+  fetchPublicStats,
+  fetchPublicAlerts,
+} from '../utils/api'
 import { usePolling } from '../hooks/usePolling'
 import MetricCard from '../components/MetricCard'
 import GameTable from '../components/GameTable'
-import PlayerList from '../components/PlayerList'
 import TransactionFeed from '../components/TransactionFeed'
-import { formatNumber, formatCoins } from '../utils/format'
+import JackpotAlert from '../components/JackpotAlert'
+import { formatCoins, formatNumber } from '../utils/format'
 import styles from './Leaderboard.module.css'
-
-// Toggle this to false when your real API is ready
-const USE_MOCK = true
-
-// Wrap mock fetches so they look like real async calls
-const getMockGames = () => Promise.resolve(MOCK_GAMES)
-const getMockPlayers = () => Promise.resolve(MOCK_PLAYERS)
-const getMockTxs = () => Promise.resolve(MOCK_TRANSACTIONS)
 
 export default function Leaderboard({ onDataLoaded }) {
   const {
-    data: games,
-    loading: gamesLoading,
-  } = usePolling(USE_MOCK ? getMockGames : fetchGames, 5000)
-
-  const {
-    data: players,
-    loading: playersLoading,
+    data: ranking,
+    loading: rankingLoading,
     lastUpdated,
-  } = usePolling(USE_MOCK ? getMockPlayers : fetchPlayers, 5000)
+  } = usePolling(fetchPublicRanking, 5000)
 
   const {
-    data: transactions,
-    loading: txLoading,
-  } = usePolling(USE_MOCK ? getMockTxs : fetchTransactions, 3000)
+    data: stats,
+    loading: statsLoading,
+  } = usePolling(fetchPublicStats, 5000)
 
-  // Notify parent (App.jsx) of lastUpdated so Navbar can show it
+  const {
+    data: alerts,
+    loading: alertsLoading,
+  } = usePolling(fetchPublicAlerts, 5000)
+
   React.useEffect(() => {
-    if (lastUpdated && onDataLoaded) onDataLoaded(lastUpdated)
+    if (lastUpdated && onDataLoaded) {
+      onDataLoaded(lastUpdated)
+    }
   }, [lastUpdated, onDataLoaded])
 
-  // Derived metrics computed from the games array
-  const totalWagered = games?.reduce((s, g) => s + g.wagered, 0) ?? 0
-  const openGames = games?.filter(g => g.status !== 'closed').length ?? 0
-  const biggestJackpot = games ? Math.max(...games.map(g => g.jackpot)) : 0
-  const biggestGame = games?.find(g => g.jackpot === biggestJackpot)
+  const games = ranking ?? []
+  const publicStats = stats ?? {
+    total_games: 0,
+    active_games: 0,
+    closed_games: 0,
+    total_jackpot: 0,
+    total_income: 0,
+    total_payouts: 0,
+    total_transactions: 0,
+  }
 
-  if (gamesLoading) {
-    return <div className={styles.loading}>Chargement des données…</div>
+  const closedAlerts = (alerts ?? []).filter((a) =>
+    a.message?.toLowerCase().includes('closed') ||
+    a.message?.toLowerCase().includes('jackpot')
+  )
+
+  if (rankingLoading || statsLoading || alertsLoading) {
+    return <div className={styles.loading}>Chargement du classement…</div>
   }
 
   return (
     <main className={styles.page}>
-      {/* Top metrics row */}
       <div className={styles.metrics}>
         <MetricCard
           label="Jeux actifs"
-          value={openGames}
-          sub={`${games?.length ?? 0} jeux au total`}
-          color="var(--purple)"
-          accent
-        />
-        <MetricCard
-          label="Mises totales"
-          value={formatCoins(totalWagered)}
-          sub="session en cours"
-          subUp
-          color="var(--gold)"
-          accent
-        />
-        <MetricCard
-          label="Joueurs actifs"
-          value={formatNumber(players?.length ?? 0)}
-          sub="classés par pièces"
+          value={formatNumber(publicStats.active_games)}
+          sub={`${formatNumber(publicStats.total_games)} jeux au total`}
           color="var(--green)"
           accent
         />
         <MetricCard
-          label="Plus gros jackpot"
-          value={formatCoins(biggestJackpot)}
-          sub={biggestGame?.name ?? ''}
+          label="Jeux fermés"
+          value={formatNumber(publicStats.closed_games)}
+          sub="jackpot à 0"
+          color="var(--red)"
+          accent
+        />
+        <MetricCard
+          label="Pièces encaissées"
+          value={formatCoins(publicStats.total_income)}
+          sub="revenus globaux"
           color="var(--gold)"
+          accent
+        />
+        <MetricCard
+          label="Jackpot cumulé"
+          value={formatCoins(publicStats.total_jackpot)}
+          sub={`${formatNumber(publicStats.total_transactions)} transactions`}
+          color="var(--purple)"
           accent
         />
       </div>
 
-      {/* Sortable game table */}
-      <GameTable games={games ?? []} />
+      {closedAlerts.length > 0 && (
+        <div className={styles.alerts}>
+          {closedAlerts.slice(0, 3).map((alert) => (
+            <JackpotAlert key={alert.id} jackpot={0} />
+          ))}
+        </div>
+      )}
 
-      {/* Bottom two-column layout */}
+      <GameTable games={games} />
+
       <div className={styles.bottomGrid}>
-        <PlayerList players={players ?? []} />
-        <TransactionFeed transactions={transactions ?? []} />
+        <TransactionFeed
+          title="⚡ Dernières transactions de la plateforme"
+          transactions={games.flatMap((game) => {
+            return game.last_transactions ?? []
+          })}
+        />
+
+        <div className={styles.sidePanel}>
+          <div className={styles.panelTitle}>🚨 Alertes récentes</div>
+          <div className={styles.alertList}>
+            {(alerts ?? []).length === 0 && (
+              <div className={styles.empty}>Aucune alerte active</div>
+            )}
+
+            {(alerts ?? []).map((alert) => (
+              <div key={alert.id} className={styles.alertRow}>
+                <div className={styles.alertMessage}>{alert.message}</div>
+                <div className={styles.alertMeta}>
+                  Jeu #{alert.game_id}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   )

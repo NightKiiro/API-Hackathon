@@ -1,51 +1,37 @@
-/**
- * components/GameTable.jsx — Sortable Games Leaderboard
- *
- * Demonstrates key React concepts:
- *   - useState: local state for which column to sort by
- *   - Derived data: we sort `games` to produce `sorted` — no extra state needed
- *   - Conditional rendering: different badge colors, status pills
- *   - Array.map(): turning data arrays into JSX elements
- */
 import React, { useState, useMemo } from 'react'
-import { formatCoins, formatNumber, jackpotPct, jackpotColor } from '../utils/format'
+import { formatCoins, formatNumber } from '../utils/format'
 import styles from './GameTable.module.css'
 
 const SORT_OPTIONS = [
-  { key: 'plays',   label: 'Popularité' },
-  { key: 'profit',  label: 'Profit' },
-  { key: 'jackpot', label: 'Jackpot' },
+  { key: 'total_transactions', label: 'Transactions' },
+  { key: 'net_revenue', label: 'Revenu net' },
+  { key: 'current_jackpot', label: 'Jackpot' },
+  { key: 'total_income', label: 'Encaissement' },
 ]
 
 const STATUS_CONFIG = {
-  open:   { label: 'Ouvert', className: 'open' },
-  hot:    { label: 'Hot 🔥', className: 'hot' },
-  closed: { label: 'Fermé',  className: 'closed' },
+  active: { label: 'Ouvert', className: 'open' },
+  closed: { label: 'Fermé', className: 'closed' },
 }
 
 export default function GameTable({ games = [] }) {
-  // useState returns [currentValue, setterFunction]
-  // When the setter is called, React re-renders this component
-  const [sortKey, setSortKey] = useState('plays')
+  const [sortKey, setSortKey] = useState('total_transactions')
 
-  // useMemo only re-sorts when `games` or `sortKey` changes
-  // Without it, sorting runs on every render (wasteful)
   const sorted = useMemo(() => {
-    return [...games].sort((a, b) => b[sortKey] - a[sortKey])
-  }, [games, sortKey])
-
-  const maxVal = useMemo(() => {
-    const vals = games.map(g => g[sortKey] ?? 0)
-    return Math.max(...vals, 1)
+    return [...games].sort((a, b) => {
+      const aVal = a?.[sortKey] ?? 0
+      const bVal = b?.[sortKey] ?? 0
+      return bVal - aVal
+    })
   }, [games, sortKey])
 
   return (
     <div className={styles.wrapper}>
-      {/* Sort buttons */}
       <div className={styles.header}>
         <span className={styles.title}>Classement des jeux</span>
+
         <div className={styles.sortBtns}>
-          {SORT_OPTIONS.map(opt => (
+          {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.key}
               className={`${styles.sortBtn} ${sortKey === opt.key ? styles.sortBtnActive : ''}`}
@@ -63,21 +49,21 @@ export default function GameTable({ games = [] }) {
             <tr>
               <th>#</th>
               <th>Jeu</th>
-              <th className={styles.r}>Participations</th>
-              <th className={styles.r}>Profit net</th>
-              <th className={styles.r}>Jackpot restant</th>
+              <th className={styles.r}>Transactions</th>
+              <th className={styles.r}>Income</th>
+              <th className={styles.r}>Payout</th>
+              <th className={styles.r}>Net</th>
+              <th className={styles.r}>Jackpot</th>
               <th className={styles.r}>Statut</th>
             </tr>
           </thead>
+
           <tbody>
             {sorted.map((game, i) => {
-              const pct = jackpotPct(game.jackpot, game.jackpotMax)
-              const barColor = jackpotColor(pct)
-              const status = STATUS_CONFIG[game.status] ?? STATUS_CONFIG.open
+              const status = STATUS_CONFIG[game.status] ?? STATUS_CONFIG.active
 
               return (
                 <tr key={game.id} className={styles.row}>
-                  {/* Rank badge: gold/silver/bronze for top 3 */}
                   <td>
                     <span className={`${styles.rank} ${styles[`rank${i + 1}`] || styles.rankN}`}>
                       {i + 1}
@@ -85,32 +71,33 @@ export default function GameTable({ games = [] }) {
                   </td>
 
                   <td>
-                    <span className={styles.gameEmoji}>{game.emoji}</span>
-                    <span className={styles.gameName}>{game.name}</span>
-                    <span className={styles.tag}>{game.type}</span>
+                    <div className={styles.gameName}>{game.name}</div>
+                    {game.description && (
+                      <div className={styles.tag}>{game.description}</div>
+                    )}
                   </td>
 
                   <td className={`${styles.r} ${styles.mono}`}>
-                    {formatNumber(game.plays)}
+                    {formatNumber(game.total_transactions)}
                   </td>
 
-                  <td className={styles.r}>
-                    <span className={styles.mono} style={{ color: game.profit >= 0 ? 'var(--green)' : 'var(--red)' }}>
-                      {game.profit >= 0 ? '+' : ''}{formatCoins(game.profit)}
-                    </span>
+                  <td className={`${styles.r} ${styles.mono}`} style={{ color: 'var(--green)' }}>
+                    {formatCoins(game.total_income)}
                   </td>
 
-                  {/* Jackpot bar */}
-                  <td className={styles.r}>
-                    <div className={styles.jackpotCell}>
-                      <span className={styles.mono}>{formatCoins(game.jackpot)}</span>
-                      <div className={styles.barBg}>
-                        <div
-                          className={styles.barFill}
-                          style={{ width: `${pct}%`, background: barColor }}
-                        />
-                      </div>
-                    </div>
+                  <td className={`${styles.r} ${styles.mono}`} style={{ color: 'var(--red)' }}>
+                    {formatCoins(game.total_payout)}
+                  </td>
+
+                  <td
+                    className={`${styles.r} ${styles.mono}`}
+                    style={{ color: game.net_revenue >= 0 ? 'var(--green)' : 'var(--red)' }}
+                  >
+                    {game.net_revenue >= 0 ? '+' : ''}{formatCoins(game.net_revenue)}
+                  </td>
+
+                  <td className={`${styles.r} ${styles.mono}`}>
+                    {formatCoins(game.current_jackpot)}
                   </td>
 
                   <td className={styles.r}>

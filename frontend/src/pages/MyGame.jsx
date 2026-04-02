@@ -1,158 +1,254 @@
-/**
- * pages/MyGame.jsx — Creator Dashboard (/my-game)
- *
- * This page is for game creators to monitor their own game.
- * New concepts here:
- *
- *   - Controlled select: the dropdown's value is stored in state.
- *     When the user picks a different game, state updates →
- *     React re-renders → the right game's data shows up.
- *
- *   - Dependent fetching: we fetch the selected game's detailed
- *     stats (profit history, win rate) only when gameId changes.
- *     usePolling's fetchFn is recreated with useCallback when
- *     gameId changes, which triggers a new fetch automatically.
- */
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
-  fetchGames, fetchGameById, fetchGameTransactions,
-  MOCK_GAMES, MOCK_CREATOR_STATS, MOCK_TRANSACTIONS
+  getApiKey,
+  setApiKey,
+  clearApiKey,
+  fetchMyGames,
+  fetchCreatorOverview,
+  fetchCreatorGameStats,
+  fetchCreatorGameTransactions,
 } from '../utils/api'
 import { usePolling } from '../hooks/usePolling'
 import MetricCard from '../components/MetricCard'
 import JackpotAlert from '../components/JackpotAlert'
-import ProfitChart from '../components/ProfitChart'
-import WinRateChart from '../components/WinRateChart'
 import TransactionFeed from '../components/TransactionFeed'
-import { formatCoins, formatNumber, jackpotPct } from '../utils/format'
+import { formatCoins, formatNumber } from '../utils/format'
 import styles from './MyGame.module.css'
 
-const USE_MOCK = true
-
-const getMockGames = () => Promise.resolve(MOCK_GAMES)
-
 export default function MyGame() {
-  // Which game is selected — 0 by default
-  const [gameId, setGameId] = useState(0)
+  const [apiKeyInput, setApiKeyInput] = useState(getApiKey())
+  const [savedApiKey, setSavedApiKey] = useState(getApiKey())
+  const [selectedGameId, setSelectedGameId] = useState(null)
+  const [authError, setAuthError] = useState('')
 
-  // Fetch the list of games for the dropdown selector
-  const { data: games } = usePolling(USE_MOCK ? getMockGames : fetchGames, 10000)
+  const saveKey = () => {
+    setApiKey(apiKeyInput.trim())
+    setSavedApiKey(apiKeyInput.trim())
+    setAuthError('')
+  }
 
-  // useCallback: re-creates this function ONLY when gameId changes
-  // This tells usePolling "fetch a different URL now"
-  const fetchSelected = useCallback(
-    () => USE_MOCK
-      ? Promise.resolve({ ...MOCK_GAMES[gameId], ...MOCK_CREATOR_STATS[gameId] })
-      : fetchGameById(gameId),
-    [gameId]
-  )
+  const logoutKey = () => {
+    clearApiKey()
+    setApiKeyInput('')
+    setSavedApiKey('')
+    setSelectedGameId(null)
+  }
 
-  const fetchSelectedTx = useCallback(
-    () => USE_MOCK
-      ? Promise.resolve(MOCK_TRANSACTIONS)
-      : fetchGameTransactions(gameId),
-    [gameId]
-  )
+  const fetchGames = useCallback(async () => {
+    if (!savedApiKey) return []
+    return fetchMyGames()
+  }, [savedApiKey])
 
-  const { data: game, loading } = usePolling(fetchSelected, 5000)
-  const { data: transactions } = usePolling(fetchSelectedTx, 4000)
+  const fetchOverview = useCallback(async () => {
+    if (!savedApiKey) return null
+    return fetchCreatorOverview()
+  }, [savedApiKey])
 
-  const pct = game ? jackpotPct(game.jackpot, game.jackpotMax) : 0
+  const {
+    data: myGames,
+    loading: gamesLoading,
+    error: gamesError,
+  } = usePolling(fetchGames, savedApiKey ? 5000 : null)
 
-  if (loading || !game) {
-    return <div className={styles.loading}>Chargement de votre jeu…</div>
+  const {
+    data: overview,
+    loading: overviewLoading,
+    error: overviewError,
+  } = usePolling(fetchOverview, savedApiKey ? 5000 : null)
+
+  React.useEffect(() => {
+    if (myGames?.length && (selectedGameId === null || !myGames.find(g => g.id === selectedGameId))) {
+      setSelectedGameId(myGames[0].id)
+    }
+  }, [myGames, selectedGameId])
+
+  const fetchSelectedStats = useCallback(async () => {
+    if (!savedApiKey || !selectedGameId) return null
+    return fetchCreatorGameStats(selectedGameId)
+  }, [savedApiKey, selectedGameId])
+
+  const fetchSelectedTransactions = useCallback(async () => {
+    if (!savedApiKey || !selectedGameId) return []
+    return fetchCreatorGameTransactions(selectedGameId)
+  }, [savedApiKey, selectedGameId])
+
+  const {
+    data: game,
+    loading: gameLoading,
+    error: gameError,
+  } = usePolling(fetchSelectedStats, savedApiKey && selectedGameId ? 4000 : null)
+
+  const {
+    data: transactions,
+    loading: txLoading,
+    error: txError,
+  } = usePolling(fetchSelectedTransactions, savedApiKey && selectedGameId ? 3000 : null)
+
+  React.useEffect(() => {
+    const err = gamesError || overviewError || gameError || txError
+    if (err) setAuthError(err.message)
+  }, [gamesError, overviewError, gameError, txError])
+
+  const summary = overview?.summary ?? {
+    total_games: 0,
+    total_current_jackpot: 0,
+    total_income: 0,
+    total_payout: 0,
+    total_net_revenue: 0,
+  }
+
+  if (!savedApiKey) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.authBox}>
+          <h1 className={styles.title}>Mon Jeu</h1>
+          <p className={styles.subtitle}>
+            Collez votre clé API créateur pour accéder à vos statistiques.
+          </p>
+
+          <input
+            className={styles.apiInput}
+            type="text"
+            value={apiKeyInput}
+            onChange={(e) => setApiKeyInput(e.target.value)}
+            placeholder="epibet_xxxxxxxxx"
+          />
+
+          <button className={styles.primaryBtn} onClick={saveKey}>
+            Enregistrer la clé API
+          </button>
+
+          {authError && <div className={styles.error}>{authError}</div>}
+        </div>
+      </main>
+    )
+  }
+
+  if (gamesLoading || overviewLoading || gameLoading || txLoading) {
+    return <div className={styles.loading}>Chargement de vos statistiques…</div>
+  }
+
+  if (!myGames || myGames.length === 0) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.authBar}>
+          <button className={styles.secondaryBtn} onClick={logoutKey}>
+            Changer de clé API
+          </button>
+        </div>
+
+        <div className={styles.emptyState}>
+          <h1>Aucun jeu trouvé</h1>
+          <p>Créez un jeu depuis votre backend puis revenez ici.</p>
+        </div>
+      </main>
+    )
   }
 
   return (
     <main className={styles.page}>
+      <div className={styles.authBar}>
+        <div className={styles.authLabel}>Clé API active</div>
+        <button className={styles.secondaryBtn} onClick={logoutKey}>
+          Changer de clé API
+        </button>
+      </div>
 
-      {/* Game selector header */}
       <div className={styles.header}>
-        <div className={styles.gameIcon}>{game.emoji}</div>
         <div>
-          <h1 className={styles.gameName}>{game.name}</h1>
-          <div className={styles.gameMeta}>{game.type} · Équipe {game.team}</div>
+          <h1 className={styles.gameName}>Dashboard créateur</h1>
+          <div className={styles.gameMeta}>
+            Suivi en direct de vos jeux et de leurs transactions
+          </div>
         </div>
 
-        {/* Controlled select — value tied to state */}
         <select
           className={styles.gameSelect}
-          value={gameId}
-          onChange={e => setGameId(Number(e.target.value))}
+          value={selectedGameId ?? ''}
+          onChange={(e) => setSelectedGameId(Number(e.target.value))}
         >
-          {(games ?? []).map(g => (
+          {(myGames ?? []).map((g) => (
             <option key={g.id} value={g.id}>
-              {g.emoji} {g.name}
+              {g.name}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Alert shown if jackpot is critical */}
-      <JackpotAlert jackpot={game.jackpot} />
-
-      {/* Jackpot health bar */}
-      <div className={styles.jackpotBar}>
-        <div className={styles.jackpotBarLabels}>
-          <span className={styles.jackpotBarLabel}>Jackpot restant</span>
-          <span className={styles.jackpotBarValue}>{formatCoins(game.jackpot)} / {formatCoins(game.jackpotMax)}</span>
-        </div>
-        <div className={styles.jackpotTrack}>
-          <div
-            className={styles.jackpotFill}
-            style={{
-              width: `${pct}%`,
-              background: pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--gold)' : 'var(--red)'
-            }}
-          />
-        </div>
-        <div className={styles.jackpotPct}>{pct}% restant</div>
-      </div>
-
-      {/* Key metrics */}
       <div className={styles.metrics}>
         <MetricCard
-          label="Profit net"
-          value={`+${formatCoins(game.profit)}`}
-          sub="bénéfice total"
-          subUp
-          color="var(--green)"
-          accent
-        />
-        <MetricCard
-          label="Participations"
-          value={formatNumber(game.plays)}
-          sub="popularité"
+          label="Nombre de jeux"
+          value={formatNumber(summary.total_games)}
+          sub="sur ce compte"
           color="var(--purple)"
           accent
         />
         <MetricCard
-          label="Mises encaissées"
-          value={formatCoins(game.wagered)}
-          sub="wagered total"
+          label="Jackpot cumulé"
+          value={formatCoins(summary.total_current_jackpot)}
+          sub="sur tous vos jeux"
           color="var(--gold)"
           accent
         />
         <MetricCard
-          label="Statut"
-          value={game.status === 'closed' ? 'Fermé' : game.status === 'hot' ? 'Hot 🔥' : 'Ouvert'}
-          sub={game.status === 'closed' ? 'jackpot épuisé' : 'en cours'}
-          color={game.status === 'closed' ? 'var(--red)' : game.status === 'hot' ? 'var(--gold)' : 'var(--green)'}
+          label="Revenus totaux"
+          value={formatCoins(summary.total_income)}
+          sub="transactions income"
+          color="var(--green)"
+          accent
+        />
+        <MetricCard
+          label="Net total"
+          value={formatCoins(summary.total_net_revenue)}
+          sub="income - payout"
+          color="var(--gold)"
           accent
         />
       </div>
 
-      {/* Charts row */}
-      <div className={styles.chartsRow}>
-        <ProfitChart history={game.profitHistory ?? []} />
-        <WinRateChart winRate={game.winRate ?? [60, 28, 12]} />
-      </div>
+      {game && (
+        <>
+          <JackpotAlert jackpot={game.current_jackpot} />
 
-      {/* Recent transactions for this game */}
+          <div className={styles.metrics}>
+            <MetricCard
+              label="Jeu"
+              value={game.name}
+              sub={game.status === 'closed' ? 'fermé' : 'actif'}
+              color={game.status === 'closed' ? 'var(--red)' : 'var(--green)'}
+              accent
+            />
+            <MetricCard
+              label="Jackpot restant"
+              value={formatCoins(game.current_jackpot)}
+              sub={`initial: ${formatCoins(game.initial_jackpot)}`}
+              color="var(--gold)"
+              accent
+            />
+            <MetricCard
+              label="Pièces encaissées"
+              value={formatCoins(game.total_income)}
+              sub={`${formatNumber(game.total_transactions)} transactions`}
+              color="var(--green)"
+              accent
+            />
+            <MetricCard
+              label="Pièces versées"
+              value={formatCoins(game.total_payout)}
+              sub={`net: ${formatCoins(game.net_revenue)}`}
+              color="var(--red)"
+              accent
+            />
+          </div>
+        </>
+      )}
+
       <TransactionFeed
+        title={game ? `⚡ Transactions — ${game.name}` : '⚡ Transactions'}
         transactions={transactions ?? []}
-        title={`⚡ Transactions — ${game.name}`}
       />
+
+      {authError && <div className={styles.error}>{authError}</div>}
     </main>
   )
 }
