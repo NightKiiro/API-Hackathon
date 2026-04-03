@@ -52,18 +52,6 @@ app.get("*", (req, res) => {
 
 /* ---------- ERROR ---------- */
 
-/* ---------- FRONT ---------- */
-
-const frontendPath = path.join(__dirname, "..", "public");
-
-app.use(express.static(frontendPath));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
-
-/* ---------- ERROR ---------- */
-
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({
