@@ -3,6 +3,7 @@ import { formatCoins, formatNumber } from '../utils/format'
 import styles from './GameTable.module.css'
 
 const SORT_OPTIONS = [
+  { key: 'total_plays', label: 'Parties jouées' },
   { key: 'total_transactions', label: 'Transactions' },
   { key: 'net_revenue', label: 'Revenu net' },
   { key: 'current_jackpot', label: 'Jackpot' },
@@ -49,6 +50,7 @@ export default function GameTable({ games = [], selectedGameId, onSelectGame }) 
             <tr>
               <th>#</th>
               <th>Jeu</th>
+              <th className={styles.r}>Parties</th>
               <th className={styles.r}>Transactions</th>
               <th className={styles.r}>Income</th>
               <th className={styles.r}>Payout</th>
@@ -82,7 +84,7 @@ export default function GameTable({ games = [], selectedGameId, onSelectGame }) 
                   </td>
 
                   <td className={`${styles.r} ${styles.mono}`}>
-                    {formatNumber(game.total_transactions)}
+                    {formatNumber(game.total_plays ?? game.total_transactions)}
                   </td>
 
                   <td className={`${styles.r} ${styles.mono}`} style={{ color: 'var(--green)' }}>

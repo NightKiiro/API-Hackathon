@@ -11,7 +11,8 @@ SELECT
     COALESCE(SUM(CASE WHEN t.type = 'payout' THEN t.amount ELSE 0 END), 0) AS total_payout,
     COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0)
       - COALESCE(SUM(CASE WHEN t.type = 'payout' THEN t.amount ELSE 0 END), 0) AS net_revenue,
-    COUNT(t.id) AS total_transactions
+    COUNT(t.id) AS total_transactions,
+    COUNT(t.id) AS total_plays
 FROM games g
 LEFT JOIN transactions t ON g.id = t.game_id
 GROUP BY g.id;
