@@ -50,7 +50,10 @@ async function authRequest(path, options = {}) {
   });
 }
 
-/* ---------------- PUBLIC ---------------- */
+/* PUBLIC */
+export const fetchPublicRanking = () => request('/public/ranking');
+export const fetchPublicStats = () => request('/public/stats');
+export const fetchPublicAlerts = () => request('/public/alerts');
 
 export const fetchPublicRanking = () => request('/public/ranking');
 export const fetchPublicStats = () => request('/public/stats');

@@ -8,6 +8,7 @@ const gamesRoutes = require("./routes/games");
 const transactionsRoutes = require("./routes/transactions");
 const publicRoutes = require("./routes/public");
 const creatorRoutes = require("./routes/creator");
+const adminRoutes = require("./routes/admin");
 
 const {
   globalLimiter,
@@ -24,6 +25,8 @@ app.use(cors());
 app.use(express.json());
 app.use(globalLimiter);
 
+app.set('trust proxy', 1)
+
 /* ---------- API ---------- */
 
 app.get("/api/health", (req, res) => {
@@ -35,6 +38,19 @@ app.use("/games", gamesRoutes);
 app.use("/games", transactionLimiter, transactionsRoutes);
 app.use("/public", publicRoutes);
 app.use("/creator", creatorRoutes);
+app.use("/admin", adminRoutes);
+
+/* ---------- FRONT ---------- */
+
+const frontendPath = path.join(__dirname, "..", "public");
+
+app.use(express.static(frontendPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+/* ---------- ERROR ---------- */
 
 /* ---------- FRONT ---------- */
 
@@ -52,6 +68,7 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({
     error: "Internal server error",
+    details: err.message,
   });
 });
 
