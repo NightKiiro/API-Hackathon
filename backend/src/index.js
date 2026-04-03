@@ -17,11 +17,15 @@ const {
 } = require("./middleware/rateLimit");
 
 const app = express();
+
+/* IMPORTANT */
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json());
 app.use(globalLimiter);
+
+app.set('trust proxy', 1)
 
 /* ---------- API ---------- */
 
@@ -35,6 +39,18 @@ app.use("/games", transactionLimiter, transactionsRoutes);
 app.use("/public", publicRoutes);
 app.use("/creator", creatorRoutes);
 app.use("/admin", adminRoutes);
+
+/* ---------- FRONT ---------- */
+
+const frontendPath = path.join(__dirname, "..", "public");
+
+app.use(express.static(frontendPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+/* ---------- ERROR ---------- */
 
 /* ---------- FRONT ---------- */
 

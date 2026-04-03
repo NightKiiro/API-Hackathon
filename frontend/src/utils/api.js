@@ -1,5 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+/* ---------------- API KEY ---------------- */
+
 export function getApiKey() {
   return localStorage.getItem('epibet_api_key') || '';
 }
@@ -11,6 +13,8 @@ export function setApiKey(key) {
 export function clearApiKey() {
   localStorage.removeItem('epibet_api_key');
 }
+
+/* ---------------- CORE REQUEST ---------------- */
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -51,32 +55,41 @@ export const fetchPublicRanking = () => request('/public/ranking');
 export const fetchPublicStats = () => request('/public/stats');
 export const fetchPublicAlerts = () => request('/public/alerts');
 
-/* AUTH */
+export const fetchPublicRanking = () =>
+  request('/public/ranking');
+
+export const fetchPublicStats = () =>
+  request('/public/stats');
+
+export const fetchPublicAlerts = () =>
+  request('/public/alerts');
+
+/* ---------------- AUTH ---------------- */
+
 export const registerCreator = (email) =>
   request('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email }),
   });
 
-export const fetchMe = () => authRequest('/auth/me');
-export const fetchApiKeys = () => authRequest('/auth/api-keys');
+export const fetchMe = () =>
+  authRequest('/auth/me');
+
+export const fetchApiKeys = () =>
+  authRequest('/auth/api-keys');
+
 export const createApiKey = () =>
-  authRequest('/auth/api-keys', { method: 'POST' });
+  authRequest('/auth/api-keys', {
+    method: 'POST',
+  });
 
-/* GAMES */
-export const fetchMyGames = () => authRequest('/games/my-games');
-export const fetchGameById = (id) => authRequest(`/games/${id}`);
-export const fetchCreatorOverview = () =>
-  authRequest('/creator/overview');
+/* ---------------- GAMES ---------------- */
 
-export const fetchCreatorGameStats = (id) =>
-  authRequest(`/creator/games/${id}/stats`);
+export const fetchMyGames = () =>
+  authRequest('/games/my-games');
 
-export const fetchCreatorGameTransactions = (id) =>
-  authRequest(`/creator/games/${id}/transactions`);
-
-export const fetchCreatorGameAlerts = (id) =>
-  authRequest(`/creator/games/${id}/alerts`);
+export const fetchGameById = (gameId) =>
+  authRequest(`/games/${gameId}`);
 
 export const createGame = (payload) =>
   authRequest('/games', {
@@ -84,7 +97,22 @@ export const createGame = (payload) =>
     body: JSON.stringify(payload),
   });
 
-/* TRANSACTIONS */
+/* ---------------- CREATOR ---------------- */
+
+export const fetchCreatorOverview = () =>
+  authRequest('/creator/overview');
+
+export const fetchCreatorGameStats = (gameId) =>
+  authRequest(`/creator/games/${gameId}/stats`);
+
+export const fetchCreatorGameTransactions = (gameId) =>
+  authRequest(`/creator/games/${gameId}/transactions`);
+
+export const fetchCreatorGameAlerts = (gameId) =>
+  authRequest(`/creator/games/${gameId}/alerts`);
+
+/* ---------------- TRANSACTIONS ---------------- */
+
 export const createTransaction = (gameId, payload) =>
   authRequest(`/games/${gameId}/transactions`, {
     method: 'POST',
