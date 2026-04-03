@@ -14,7 +14,7 @@ const STATUS_CONFIG = {
   closed: { label: 'Fermé', className: 'closed' },
 }
 
-export default function GameTable({ games = [] }) {
+export default function GameTable({ games = [], selectedGameId, onSelectGame }) {
   const [sortKey, setSortKey] = useState('total_transactions')
 
   const sorted = useMemo(() => {
@@ -63,7 +63,11 @@ export default function GameTable({ games = [] }) {
               const status = STATUS_CONFIG[game.status] ?? STATUS_CONFIG.active
 
               return (
-                <tr key={game.id} className={styles.row}>
+                <tr
+                  key={game.id}
+                  className={`${styles.row} ${game.id === selectedGameId ? styles.selectedRow : ''}`}
+                  onClick={() => onSelectGame?.(game.id)}
+                >
                   <td>
                     <span className={`${styles.rank} ${styles[`rank${i + 1}`] || styles.rankN}`}>
                       {i + 1}

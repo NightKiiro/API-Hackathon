@@ -13,6 +13,8 @@ import { formatCoins, formatNumber } from '../utils/format'
 import styles from './Leaderboard.module.css'
 
 export default function Leaderboard({ onDataLoaded }) {
+  const [selectedGameId, setSelectedGameId] = React.useState(null)
+
   const {
     data: ranking,
     loading: rankingLoading,
@@ -45,6 +47,11 @@ export default function Leaderboard({ onDataLoaded }) {
     total_payouts: 0,
     total_transactions: 0,
   }
+
+  const selectedGame = React.useMemo(
+    () => (games || []).find((g) => g.id === selectedGameId) ?? null,
+    [games, selectedGameId]
+  )
 
   const closedAlerts = (alerts ?? []).filter((a) =>
     a.message?.toLowerCase().includes('closed') ||
@@ -103,9 +110,24 @@ export default function Leaderboard({ onDataLoaded }) {
         </div>
       )}
 
-      <GameTable games={games} />
+      <GameTable
+        games={games}
+        selectedGameId={selectedGameId}
+        onSelectGame={setSelectedGameId}
+      />
+
+      {selectedGame && (
+        <div className={styles.selectedGameInfo}>
+          <h3>Détails du jeu sélectionné</h3>
+          <p><strong>Nom : </strong>{selectedGame.name}</p>
+          <p><strong>Statut : </strong>{selectedGame.status}</p>
+          <p><strong>Transactions : </strong>{formatNumber(selectedGame.total_transactions)}</p>
+          <p><strong>Net : </strong>{formatCoins(selectedGame.net_revenue)}</p>
+        </div>
+      )}
 
       <div className={styles.bottomGrid}>
+
         <TransactionFeed
           title="⚡ Dernières transactions de la plateforme"
           transactions={games.flatMap((game) => {

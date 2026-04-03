@@ -88,6 +88,14 @@
   background: var(--bg-hover);
 }
 
+.selectedRow {
+  background: rgba(35, 103, 255, 0.14);
+}
+
+.row {
+  cursor: pointer;
+}
+
 .table tbody td {
   padding: 12px 16px;
   font-size: 13px;
