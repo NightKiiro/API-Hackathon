@@ -1,15 +1,15 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://10.79.215.134:8000'
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export function getApiKey() {
-  return localStorage.getItem('epibet_api_key') || ''
+  return localStorage.getItem('epibet_api_key') || '';
 }
 
 export function setApiKey(key) {
-  localStorage.setItem('epibet_api_key', key)
+  localStorage.setItem('epibet_api_key', key);
 }
 
 export function clearApiKey() {
-  localStorage.removeItem('epibet_api_key')
+  localStorage.removeItem('epibet_api_key');
 }
 
 async function request(path, options = {}) {
@@ -19,22 +19,22 @@ async function request(path, options = {}) {
       ...(options.headers || {}),
     },
     ...options,
-  })
+  });
 
-  const data = await res.json().catch(() => ({}))
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || 'Erreur API')
+    throw new Error(data.error || data.message || 'Erreur API');
   }
 
-  return data
+  return data;
 }
 
 async function authRequest(path, options = {}) {
-  const apiKey = getApiKey()
+  const apiKey = getApiKey();
 
   if (!apiKey) {
-    throw new Error('Clé API manquante')
+    throw new Error('Clé API manquante');
   }
 
   return request(path, {
@@ -43,84 +43,50 @@ async function authRequest(path, options = {}) {
       ...(options.headers || {}),
       'X-API-Key': apiKey,
     },
-  })
+  });
 }
 
-/* ---------------- PUBLIC ---------------- */
+/* PUBLIC */
+export const fetchPublicRanking = () => request('/public/ranking');
+export const fetchPublicStats = () => request('/public/stats');
+export const fetchPublicAlerts = () => request('/public/alerts');
 
-export async function fetchPublicRanking() {
-  return request('/public/ranking')
-}
-
-export async function fetchPublicStats() {
-  return request('/public/stats')
-}
-
-export async function fetchPublicAlerts() {
-  return request('/public/alerts')
-}
-
-/* ---------------- AUTH ---------------- */
-
-export async function registerCreator(email) {
-  return request('/auth/register', {
+/* AUTH */
+export const registerCreator = (email) =>
+  request('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email }),
-  })
-}
+  });
 
-export async function fetchMe() {
-  return authRequest('/auth/me')
-}
+export const fetchMe = () => authRequest('/auth/me');
+export const fetchApiKeys = () => authRequest('/auth/api-keys');
+export const createApiKey = () =>
+  authRequest('/auth/api-keys', { method: 'POST' });
 
-export async function fetchApiKeys() {
-  return authRequest('/auth/api-keys')
-}
+/* GAMES */
+export const fetchMyGames = () => authRequest('/games/my-games');
+export const fetchGameById = (id) => authRequest(`/games/${id}`);
+export const fetchCreatorOverview = () =>
+  authRequest('/creator/overview');
 
-export async function createApiKey() {
-  return authRequest('/auth/api-keys', {
-    method: 'POST',
-  })
-}
+export const fetchCreatorGameStats = (id) =>
+  authRequest(`/creator/games/${id}/stats`);
 
-/* ---------------- GAMES / CREATOR ---------------- */
+export const fetchCreatorGameTransactions = (id) =>
+  authRequest(`/creator/games/${id}/transactions`);
 
-export async function fetchMyGames() {
-  return authRequest('/games/my-games')
-}
+export const fetchCreatorGameAlerts = (id) =>
+  authRequest(`/creator/games/${id}/alerts`);
 
-export async function fetchGameById(gameId) {
-  return authRequest(`/games/${gameId}`)
-}
-
-export async function fetchCreatorOverview() {
-  return authRequest('/creator/overview')
-}
-
-export async function fetchCreatorGameStats(gameId) {
-  return authRequest(`/creator/games/${gameId}/stats`)
-}
-
-export async function fetchCreatorGameTransactions(gameId) {
-  return authRequest(`/creator/games/${gameId}/transactions`)
-}
-
-export async function fetchCreatorGameAlerts(gameId) {
-  return authRequest(`/creator/games/${gameId}/alerts`)
-}
-
-export async function createGame(payload) {
-  return authRequest('/games', {
+export const createGame = (payload) =>
+  authRequest('/games', {
     method: 'POST',
     body: JSON.stringify(payload),
-  })
-}
+  });
 
-/* ---------------- TRANSACTIONS ---------------- */
-
-export async function createTransaction(gameId, payload) {
-  return authRequest(`/games/${gameId}/transactions`, {
+/* TRANSACTIONS */
+export const createTransaction = (gameId, payload) =>
+  authRequest(`/games/${gameId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(payload),
-  })
-}
+  });
