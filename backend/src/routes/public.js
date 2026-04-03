@@ -53,7 +53,8 @@ router.get("/stats", async (req, res, next) => {
       SELECT
         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
         COALESCE(SUM(CASE WHEN type = 'payout' THEN amount ELSE 0 END), 0) AS total_payouts,
-        COUNT(*) AS total_transactions
+        COUNT(*) AS total_transactions,
+        COUNT(*) AS total_plays
       FROM transactions
       `
     );

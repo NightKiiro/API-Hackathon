@@ -73,6 +73,13 @@ export default function Leaderboard({ onDataLoaded }) {
           accent
         />
         <MetricCard
+          label="Parties jouées"
+          value={formatNumber(publicStats.total_plays ?? publicStats.total_transactions)}
+          sub="transactions totales"
+          color="var(--blue)"
+          accent
+        />
+        <MetricCard
           label="Pièces encaissées"
           value={formatCoins(publicStats.total_income)}
           sub="revenus globaux"
