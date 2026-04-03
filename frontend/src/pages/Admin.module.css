@@ -1,0 +1,140 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.primaryBtn,
+.actionBtn {
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.primaryBtn {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #241700;
+}
+
+.actionBtn:hover,
+.primaryBtn:hover {
+  opacity: 0.95;
+}
+
+.dangerBtn {
+  background: rgba(255, 79, 79, 0.12);
+  color: var(--red);
+  border-color: rgba(255, 79, 79, 0.25);
+}
+
+.warningBtn {
+  background: rgba(245, 200, 66, 0.12);
+  color: var(--gold);
+  border-color: rgba(245, 200, 66, 0.25);
+}
+
+.status {
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.error {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 79, 79, 0.08);
+  border: 1px solid rgba(255, 79, 79, 0.2);
+  color: var(--red);
+}
+
+.result {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 20px 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    flex-direction: column;
+  }
+}
