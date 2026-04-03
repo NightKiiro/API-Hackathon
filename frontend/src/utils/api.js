@@ -52,14 +52,9 @@ async function authRequest(path, options = {}) {
 
 /* ---------------- PUBLIC ---------------- */
 
-export const fetchPublicRanking = () =>
-  request('/public/ranking');
-
-export const fetchPublicStats = () =>
-  request('/public/stats');
-
-export const fetchPublicAlerts = () =>
-  request('/public/alerts');
+export const fetchPublicRanking = () => request('/public/ranking');
+export const fetchPublicStats = () => request('/public/stats');
+export const fetchPublicAlerts = () => request('/public/alerts');
 
 /* ---------------- AUTH ---------------- */
 
@@ -69,11 +64,9 @@ export const registerCreator = (email) =>
     body: JSON.stringify({ email }),
   });
 
-export const fetchMe = () =>
-  authRequest('/auth/me');
+export const fetchMe = () => authRequest('/auth/me');
 
-export const fetchApiKeys = () =>
-  authRequest('/auth/api-keys');
+export const fetchApiKeys = () => authRequest('/auth/api-keys');
 
 export const createApiKey = () =>
   authRequest('/auth/api-keys', {
@@ -82,11 +75,9 @@ export const createApiKey = () =>
 
 /* ---------------- GAMES ---------------- */
 
-export const fetchMyGames = () =>
-  authRequest('/games/my-games');
+export const fetchMyGames = () => authRequest('/games/my-games');
 
-export const fetchGameById = (gameId) =>
-  authRequest(`/games/${gameId}`);
+export const fetchGameById = (gameId) => authRequest(`/games/${gameId}`);
 
 export const createGame = (payload) =>
   authRequest('/games', {
@@ -96,8 +87,7 @@ export const createGame = (payload) =>
 
 /* ---------------- CREATOR ---------------- */
 
-export const fetchCreatorOverview = () =>
-  authRequest('/creator/overview');
+export const fetchCreatorOverview = () => authRequest('/creator/overview');
 
 export const fetchCreatorGameStats = (gameId) =>
   authRequest(`/creator/games/${gameId}/stats`);
